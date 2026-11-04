@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Overview · {{ institution_name }}{% endblock %}
+{% block page_title %}Institution overview{% endblock %}
+{% block content %}
+<section class="ae-welcome">
+  <div>
+    <div class="ae-eyebrow"><span></span> ATTENDANCE INTELLIGENCE <span class="ae-live">LIVE DATABASE</span></div>
+    <h1>Good day, {{ current_user.full_name.split(' ')[0] if current_user.is_authenticated else 'Administrator' }}.</h1>
+    <p>Here’s the current attendance picture for <strong>{{ institution_name }}</strong>.</p>
+  </div>
+  <div class="ae-welcome-actions">
+    <a class="ae-btn ae-btn-light" href="{{ url_for('employees.import_employees') }}">＋ Bulk import</a>
+    <a class="ae-btn ae-btn-dark" href="{{ url_for('attendance.mark_attendance') }}">＋ Record attendance</a>
+  </div>
+</section>
+
+<section class="ae-kpis" aria-label="Institution key performance indicators">
+  <article class="ae-kpi"><div class="ae-kpi-top"><span>Active {{ emp_label_plural }}</span><span class="ae-icon ae-icon-green">♙</span></div><strong>{{ kpis.total_employees }}</strong><small>Currently active in roster</small></article>
+  <article class="ae-kpi"><div class="ae-kpi-top"><span>{{ dept_label }}s</span><span class="ae-icon ae-icon-blue">▦</span></div><strong>{{ kpis.departments_count }}</strong><small>Represented in active roster</small></article>
+  <article class="ae-kpi"><div class="ae-kpi-top"><span>Overall attendance</span><span class="ae-icon ae-icon-green">⌁</span></div><strong>{{ '%.2f'|format(kpis.overall_percentage) }}<em>%</em></strong><small><b class="{% if kpis.overall_percentage >= threshold %}ae-good{% else %}ae-warn{% endif %}">{{ 'On track' if kpis.overall_percentage >= threshold else 'Below benchmark' }}</b> · Target {{ threshold }}%</small></article>
+  <article class="ae-kpi"><div class="ae-kpi-top"><span>Absenteeism rate</span><span class="ae-icon ae-icon-amber">◷</span></div><strong>{{ '%.2f'|format(kpis.overall_absenteeism) }}<em>%</em></strong><small>Based on present, absent and leave entries</small></article>
+</section>
+
+<section class="ae-main-grid">
+  <article class="ae-panel ae-trend-panel">
+    <div class="ae-panel-heading">
+      <div><span class="ae-overline">PERFORMANCE</span><h2>Attendance trends</h2><p>Monthly aggregates from saved attendance records</p></div>
+      <div class="ae-controls"><label for="trendMetric">Metric</label><select id="trendMetric"><option value="attendance">Attendance</option><option value="absenteeism">Absenteeism</option><option value="present">Present count</option></select><select id="trendRange" aria-label="Trend period"><option value="6">6 months</option><option value="12">12 months</option><option value="all">All time</option></select></div>
+    </div>
+    <div class="ae-chart-stats"><div><small>Attendance</small><b>{{ '%.2f'|format(kpis.overall_percentage) }}%</b></div><div><small>Absenteeism</small><b>{{ '%.2f'|format(kpis.overall_absenteeism) }}%</b></div><div><small>Saved entries</small><b>{{ kpis.total_records }}</b></div></div>
+    <div class="trend-plot ae-trend-plot" id="attendanceTrend" data-series='{{ monthly_summary|tojson }}'><div class="trend-empty">Loading attendance history…</div></div>
+    <div class="ae-chart-foot"><span><i></i> Selected metric</span><span>Use the controls to change metric and period</span></div>
+  </article>
+
+  <article class="ae-panel ae-compliance-panel">
+    <div class="ae-panel-heading"><div><span class="ae-overline">POLICY MONITOR</span><h2>Benchmark compliance</h2><p>Institutional attendance threshold</p></div><span class="ae-icon ae-icon-green">✓</span></div>
+    <div class="ae-gauge" style="--gauge-value: {{ [kpis.overall_percentage, 100]|min }};"><div class="ae-gauge-inner"><strong>{{ '%.1f'|format(kpis.overall_percentage) }}%</strong><small>Overall attendance</small></div></div>
+    <div class="ae-gauge-meta"><div><small>Required target</small><b>{{ threshold }}%</b></div><div><small>Below threshold</small><b>{{ kpis.defaulters_count }}</b></div></div>
+    <a class="ae-inline-link" href="{{ url_for('reports.index', type='employee') }}">Review compliance details <span>→</span></a>
+  </article>
+</section>
+
+<section class="ae-secondary-grid">
+  <article class="ae-panel">
+    <div class="ae-panel-heading"><div><span class="ae-overline">FOLLOW UP</span><h2>Needs attention</h2><p>{{ emp_label_plural }} below the {{ threshold }}% benchmark</p></div><span class="ae-count">{{ kpis.defaulters_count }}</span></div>
+    {% if kpis.defaulters %}
+    <div class="ae-table-wrap"><table class="table ae-table"><thead><tr><th>PERSON</th><th>{{ dept_label|upper }}</th><th>WORKING DAYS</th><th>ATTENDANCE</th></tr></thead><tbody>
+    {% for e in kpis.defaulters[:7] %}<tr><td><a href="{{ url_for('employees.view_employee', employee_id=e.employee_id) }}"><b>{{ e.employee_name }}</b><small>{{ e.employee_code }}</small></a></td><td>{{ e.department }}</td><td>{{ e.total_working_days }}</td><td><span class="ae-rate-low">{{ '%.1f'|format(e.attendance_percentage) }}%</span></td></tr>{% endfor %}
+    </tbody></table></div>
+    {% else %}<div class="ae-empty"><span>✓</span><b>No staff currently below the threshold</b><p>New exceptions will appear here as attendance is recorded.</p></div>{% endif %}
+    {% if kpis.defaulters_count > 7 %}<a class="ae-inline-link" href="{{ url_for('reports.index', type='employee') }}">View all {{ kpis.defaulters_count }} exceptions →</a>{% endif %}
+  </article>
+
+  <article class="ae-panel">
+    <div class="ae-panel-heading"><div><span class="ae-overline">ORGANISATION</span><h2>{{ dept_label }} performance</h2><p>Attendance calculated from recorded entries</p></div><a class="ae-mini-link" href="{{ url_for('employees.departments') }}">Manage →</a></div>
+    {% if department_summary %}
+    <div class="ae-dept-list">{% for d in department_summary[:6] %}<div class="ae-dept-row"><div class="ae-dept-name"><span class="ae-dept-mark">▦</span><div><b>{{ d.department }}</b><small>{{ d.total_employees }} active staff · {{ d.total_working_days }} working entries</small></div></div><div class="ae-dept-metric"><b>{{ '%.1f'|format(d.attendance_percentage) }}%</b><span><i style="width:{{ [d.attendance_percentage,100]|min }}%"></i></span></div></div>{% endfor %}</div>
+    {% else %}<div class="ae-empty"><span>▦</span><b>No department data yet</b><p>Add faculty and assign departments to see comparisons.</p></div>{% endif %}
+  </article>
+</section>
+
+<section class="ae-panel ae-activity-panel">
+  <div class="ae-panel-heading"><div><span class="ae-overline">LATEST RECORDS</span><h2>Recent attendance activity</h2><p>Daily totals from the latest saved sessions</p></div><a class="ae-mini-link" href="{{ url_for('attendance.history') }}">All attendance logs →</a></div>
+  {% if kpis.recent_activity %}
+  <div class="ae-table-wrap"><table class="table ae-table ae-activity-table"><thead><tr><th>DATE</th><th>RECORDS</th><th>PRESENT</th><th>ABSENT</th><th>LEAVE</th><th>ATTENDANCE</th></tr></thead><tbody>
+  {% for d in kpis.recent_activity %}<tr><td><b>{{ d.date.strftime('%d %b %Y') }}</b><small>{{ d.date.strftime('%A') }}</small></td><td>{{ d.total }}</td><td><span class="ae-pill ae-pill-green">{{ d.present }}</span></td><td><span class="ae-pill ae-pill-red">{{ d.absent }}</span></td><td><span class="ae-pill ae-pill-blue">{{ d.leave }}</span></td><td><b>{{ '%.1f'|format(d.percentage) }}%</b></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% else %}<div class="ae-empty"><span>◷</span><b>No attendance sessions recorded</b><p>Record attendance to populate activity and analytics.</p><a class="ae-btn ae-btn-dark" href="{{ url_for('attendance.mark_attendance') }}">Record attendance</a></div>{% endif %}
+</section>
+
+<section class="ae-quick-actions"><a href="{{ url_for('employees.add_employee') }}"><span>＋</span><b>Add {{ emp_label_singular }}</b><small>Expand the roster</small></a><a href="{{ url_for('employees.import_employees') }}"><span>⇧</span><b>Bulk import</b><small>Upload roster data</small></a><a href="{{ url_for('reports.index') }}"><span>▥</span><b>Reports & analytics</b><small>Explore detailed analysis</small></a><a href="{{ url_for('settings.index') }}"><span>⚙</span><b>Institution settings</b><small>Configure policies</small></a></section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/attendance-trend.js') }}"></script>{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ emp_label_plural }} Directory — {{ institution_name }}{% endblock %}
+{% block page_title %}{{ emp_label_plural }} Directory{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <a href="{{ url_for('employees.departments') }}" class="btn btn-secondary btn-sm">Manage Departments</a>
+    <a href="{{ url_for('employees.import_employees') }}" class="btn btn-secondary btn-sm">Bulk Import</a>
+  </div>
+  <form class="search-form" method="get">
+    <div class="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" name="q" value="{{ search }}" placeholder="Search name or ID code…" class="search-input" />
+    </div>
+    <select name="department" class="select-filter">
+      <option value="">All {{ dept_label }}s</option>
+      {% for dept in departments %}
+        <option value="{{ dept }}" {% if dept_filter == dept %}selected{% endif %}>{{ dept }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" class="select-filter">
+      <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+      <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+      <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+    </select>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if search or dept_filter or status_filter != 'active' %}
+      <a href="{{ url_for('employees.list_employees') }}" class="btn btn-ghost btn-sm">Clear</a>
+    {% endif %}
+  </form>
+  <a href="{{ url_for('employees.add_employee') }}" class="btn btn-primary btn-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14m-7-7h14"/></svg>
+    Add {{ emp_label_singular }}
+  </a>
+</div>
+
+{% if employees %}
+  <div class="card card--table">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>{{ id_code_label }}</th>
+            <th>Name</th>
+            <th>{{ dept_label }}</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for emp in employees %}
+          <tr class="{% if not emp.is_active %}row--inactive{% endif %}">
+            <td><span class="code-badge">{{ emp.employee_code or '—' }}</span></td>
+            <td>
+              <a href="{{ url_for('employees.view_employee', employee_id=emp.employee_id) }}" class="link-body fw-medium">{{ emp.employee_name or 'Name not provided' }}</a>
+            </td>
+            <td>{{ emp.department or 'Unassigned' }}</td>
+            <td>
+              {% if emp.is_active %}
+                <span class="badge badge--active">Active</span>
+              {% else %}
+                <span class="badge badge--inactive">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="action-group">
+                <a href="{{ url_for('employees.view_employee', employee_id=emp.employee_id) }}" class="action-btn" title="View Profile">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </a>
+                <a href="{{ url_for('employees.edit_employee', employee_id=emp.employee_id) }}" class="action-btn" title="Edit Profile">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </a>
+                {% if emp.is_active %}
+                  <form method="post" action="{{ url_for('employees.deactivate_employee', employee_id=emp.employee_id) }}" style="display:inline;" onsubmit="return confirm('Deactivate this record? Attendance history will be preserved.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="action-btn action-btn--danger" title="Deactivate">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    </button>
+                  </form>
+                {% else %}
+                  <form method="post" action="{{ url_for('employees.reactivate_employee', employee_id=emp.employee_id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="action-btn" title="Reactivate" style="color: #187C78;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="card-footer">
+      <span class="text-sm text-secondary">Showing {{ employees|length }} record{{ 's' if employees|length != 1 }}</span>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <p>No {{ emp_label_plural|lower }} found matching your criteria.</p>
+    <a href="{{ url_for('employees.add_employee') }}" class="btn btn-primary btn-sm">Add New {{ emp_label_singular }}</a>
+  </div>
+{% endif %}
+{% endblock %}

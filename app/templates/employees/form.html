@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{% if employee %}Edit {{ emp_label_singular }}{% else %}Add {{ emp_label_singular }}{% endif %} — {{ institution_name }}{% endblock %}
+{% block page_title %}{% if employee %}Edit {{ emp_label_singular }}{% else %}Add New {{ emp_label_singular }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="card form-card">
+    <div class="card-header">
+      <h2 class="card-title">{% if employee %}Edit {{ emp_label_singular }}: {{ employee.employee_name or 'Name not provided' }}{% else %}New {{ emp_label_singular }} Profile{% endif %}</h2>
+    </div>
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="employee_code" class="form-label">{{ id_code_label }}</label>
+          <input type="text" id="employee_code" name="employee_code"
+                 value="{{ form_data.get('employee_code') or '' }}"
+                 class="form-input" placeholder="e.g. FAC001 or EMP101"
+                 maxlength="20" autocomplete="off" style="text-transform:uppercase;" />
+          <p class="form-hint">Optional; must be unique when provided.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="employee_name" class="form-label">Full Name</label>
+          <input type="text" id="employee_name" name="employee_name"
+                 value="{{ form_data.get('employee_name') or '' }}"
+                 class="form-input" placeholder="e.g. Dr. Jane Smith"
+                 maxlength="120" />
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="department" class="form-label">{{ dept_label }}</label>
+          <select id="department" name="department" class="form-select">
+            <option value="">Unassigned</option>
+            {% for dept in departments %}
+              <option value="{{ dept.name }}" {% if (form_data.get('department') or '') == dept.name %}selected{% endif %}>{{ dept.name }} ({{ dept.code }})</option>
+            {% endfor %}
+            {% if employee and employee.department and employee.department not in departments|map(attribute='name')|list %}
+              <option value="{{ employee.department }}" selected>{{ employee.department }} (legacy record)</option>
+            {% endif %}
+          </select>
+          <p class="form-hint">Optional. Choose an active department if known, or <a href="{{ url_for('employees.departments') }}">manage departments</a>.</p>
+        </div>
+        <div class="form-group">
+          <label for="designation" class="form-label">Designation</label>
+          <input type="text" id="designation" name="designation" value="{{ form_data.get('designation') or (employee.designation if employee else '') or '' }}" class="form-input" maxlength="80" placeholder="e.g. Assistant Professor" />
+        </div>
+        <div class="form-group">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" id="email" name="email" value="{{ form_data.get('email') or (employee.email if employee else '') or '' }}" class="form-input" maxlength="120" placeholder="name@institution.edu" />
+        </div>
+        <div class="form-group">
+          <label for="phone" class="form-label">Phone</label>
+          <input type="tel" id="phone" name="phone" value="{{ form_data.get('phone') or (employee.phone if employee else '') or '' }}" class="form-input" maxlength="30" placeholder="Contact number" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+          {% if employee %}Save Changes{% else %}Create {{ emp_label_singular }}{% endif %}
+        </button>
+        <a href="{{ url_for('employees.list_employees') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

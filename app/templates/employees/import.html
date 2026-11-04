@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Bulk Faculty Import — {{ institution_name }}{% endblock %}
+{% block page_title %}Bulk Faculty / Staff Import{% endblock %}
+{% block content %}
+<div class="form-page" style="max-width:850px;margin:0 auto;">
+  <div class="card form-card">
+    <div class="card-header"><h2 class="card-title">Upload faculty / staff data file</h2></div>
+    <p class="text-secondary">Upload an Excel, CSV, PDF, Word, or text roster (maximum 8 MB). The importer scans the first 15 rows for a header, recognizes common faculty/employee column names even when columns are reordered, and matches departments against your active directory. It sorts the preview by department and name.</p>
+    <p class="text-sm text-secondary" style="margin-top:.65rem">Review and edit any extracted values before importing. Missing fields are non-blocking warnings; duplicate IDs still require review. Unmatched departments are left unassigned, and scanned/image-only PDFs are not supported.</p>
+    <form method="post" enctype="multipart/form-data" style="margin-top:1rem">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group"><label class="form-label" for="file">Choose data file</label><input class="form-input" type="file" id="file" name="file" accept=".xlsx,.xls,.csv,.pdf,.docx,.txt,.rtf" required></div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">Upload and Preview</button><a class="btn btn-ghost" href="{{ url_for('employees.list_employees') }}">Cancel</a></div>
+    </form>
+    <hr style="margin:1.5rem 0">
+    <p><strong>Recognised optional columns:</strong> Faculty ID, Faculty Name, Department, Email, Designation, Phone.</p>
+    <p class="text-sm text-secondary">Any available faculty details can be imported. Empty rows are skipped, and missing details can be added later from the Faculty &amp; Staff section. Existing departments are matched automatically; unmatched departments are not created during import.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Edit Attendance — {{ app_name }}{% endblock %}
+{% block page_title %}Edit Attendance Record{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="card form-card">
+    <div class="card-header">
+      <h2 class="card-title">Correct Attendance Status</h2>
+    </div>
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-grid" style="grid-template-columns: 1fr;">
+        <div class="form-group">
+          <label class="form-label">Employee</label>
+          <input type="text" class="form-input" value="{{ record.employee.employee_name or 'Name not provided' }} ({{ record.employee.employee_code or 'No ID' }}) - {{ record.employee.department or 'Unassigned' }}" disabled style="background: #F8F9FA;" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Attendance Date</label>
+          <input type="text" class="form-input" value="{{ record.attendance_date.strftime('%d %B %Y (%A)') }}" disabled style="background: #F8F9FA;" />
+        </div>
+
+        <div class="form-group">
+          <label for="status" class="form-label">Status <span class="required">*</span></label>
+          <select name="status" id="status" class="form-select" required>
+            <option value="Present" {% if record.status == 'Present' %}selected{% endif %}>Present</option>
+            <option value="Absent" {% if record.status == 'Absent' %}selected{% endif %}>Absent</option>
+            <option value="Leave" {% if record.status == 'Leave' %}selected{% endif %}>Leave</option>
+            <option value="Holiday" {% if record.status == 'Holiday' %}selected{% endif %}>Holiday</option>
+          </select>
+          <p class="form-hint">Working Days = Present + Absent + Leave. Holiday is excluded.</p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Update Record</button>
+        <a href="{{ url_for('attendance.history') }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

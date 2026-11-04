@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Attendance Logs — {{ app_name }}{% endblock %}
+{% block page_title %}Daily Attendance Logs{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <form class="search-form" method="get">
+    <select name="department" class="select-filter">
+      <option value="">All Departments</option>
+      {% for d in departments %}
+        <option value="{{ d }}" {% if dept_filter == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <select name="status" class="select-filter">
+      <option value="">All Statuses</option>
+      <option value="Present" {% if status_filter == 'Present' %}selected{% endif %}>Present</option>
+      <option value="Absent" {% if status_filter == 'Absent' %}selected{% endif %}>Absent</option>
+      <option value="Leave" {% if status_filter == 'Leave' %}selected{% endif %}>Leave</option>
+      <option value="Holiday" {% if status_filter == 'Holiday' %}selected{% endif %}>Holiday</option>
+    </select>
+    <div class="date-filter-group">
+      <label class="text-sm text-secondary">From:</label>
+      <input type="date" name="date_from" value="{{ date_from or '' }}" class="form-input form-input--compact" />
+    </div>
+    <div class="date-filter-group">
+      <label class="text-sm text-secondary">To:</label>
+      <input type="date" name="date_to" value="{{ date_to or '' }}" class="form-input form-input--compact" />
+    </div>
+    <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+    {% if dept_filter or status_filter or date_from or date_to %}
+      <a href="{{ url_for('attendance.history') }}" class="btn btn-ghost btn-sm">Clear</a>
+    {% endif %}
+  </form>
+  <a href="{{ url_for('attendance.mark_attendance') }}" class="btn btn-primary btn-sm">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14m-7-7h14"/></svg>
+    Record Attendance
+  </a>
+</div>
+
+{% if records %}
+  <div class="card card--table">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Emp Code</th>
+            <th>Employee Name</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Logged At</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td><strong>{{ r.attendance_date.strftime('%d %b %Y') }}</strong></td>
+            <td><span class="code-badge">{{ r.employee.employee_code or '—' }}</span></td>
+            <td>
+              <a href="{{ url_for('employees.view_employee', employee_id=r.employee_id) }}" class="link-body fw-medium">{{ r.employee.employee_name or 'Name not provided' }}</a>
+            </td>
+            <td>{{ r.employee.department or 'Unassigned' }}</td>
+            <td>
+              {% if r.status == 'Present' %}
+                <span class="badge badge--present">Present</span>
+              {% elif r.status == 'Absent' %}
+                <span class="badge badge--absent">Absent</span>
+              {% elif r.status == 'Leave' %}
+                <span class="badge badge--late">Leave</span>
+              {% else %}
+                <span class="badge badge--neutral">Holiday</span>
+              {% endif %}
+            </td>
+            <td class="text-secondary text-sm">{{ r.recorded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              <div class="action-group">
+                <a href="{{ url_for('attendance.edit_record', attendance_id=r.attendance_id) }}" class="action-btn" title="Edit Status">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </a>
+                <form method="post" action="{{ url_for('attendance.delete_record', attendance_id=r.attendance_id) }}" class="inline-form" onsubmit="return confirm('Delete this attendance entry?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="action-btn action-btn--danger" title="Delete">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+      <div class="pagination">
+        {% if pagination.has_prev %}
+          <a href="{{ url_for('attendance.history', page=pagination.prev_num, department=dept_filter, status=status_filter, date_from=date_from, date_to=date_to) }}" class="pagination-link">&larr; Previous</a>
+        {% endif %}
+        <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+          <a href="{{ url_for('attendance.history', page=pagination.next_num, department=dept_filter, status=status_filter, date_from=date_from, date_to=date_to) }}" class="pagination-link">Next &rarr;</a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+{% else %}
+  <div class="empty-state empty-state--page">
+    <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+    </svg>
+    <p>No attendance logs found matching the filter criteria.</p>
+    <a href="{{ url_for('attendance.mark_attendance') }}" class="btn btn-primary btn-sm">Record Attendance Now</a>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attendance Audit Report — {{ institution_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #101B2B;
+      background: #F8FAFC;
+      padding: 2rem;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .print-toolbar {
+      max-width: 1000px;
+      margin: 0 auto 1.5rem auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FFFFFF;
+      padding: 0.75rem 1.25rem;
+      border: 1px solid #E2E6E8;
+      border-radius: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn-primary { background: #187C78; color: #fff; border: 1px solid #187C78; }
+    .btn-secondary { background: #F1F5F9; color: #334155; border: 1px solid #CBD5E1; }
+    .sheet {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #FFFFFF;
+      padding: 2.5rem 3rem;
+      border: 1px solid #E2E6E8;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .header-block {
+      border-bottom: 2px solid #17263C;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .inst-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #101B2B;
+      letter-spacing: -0.01em;
+    }
+    .report-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #187C78;
+      margin-top: 0.25rem;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid #E2E6E8;
+      font-size: 0.75rem;
+      color: #475569;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.75rem;
+    }
+    th {
+      background: #17263C;
+      color: #FFFFFF;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid #17263C;
+    }
+    td {
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #E2E6E8;
+    }
+    tr:nth-child(even) { background: #F8FAFC; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .font-bold { font-weight: 700; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .badge-defaulter { color: #991B1B; font-weight: 700; }
+    .badge-pass { color: #166534; font-weight: 600; }
+    .footer-block {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #E2E6E8;
+      display: flex;
+      justify-content: space-between;
+      color: #64748B;
+      font-size: 0.6875rem;
+    }
+
+    @media print {
+      body { background: #FFFFFF; padding: 0; }
+      .print-toolbar { display: none !important; }
+      .sheet {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      th { background: #17263C !important; color: #FFFFFF !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      tr:nth-child(even) { background: #F8FAFC !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Non-printing toolbar -->
+  <div class="print-toolbar">
+    <div>
+      <strong>Official Attendance Report</strong> &mdash; Printable Layout
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a href="{{ url_for('reports.index', type=report_type) }}" class="btn btn-secondary">&larr; Back to Portal</a>
+      <button onclick="window.print()" class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        Print / Save to PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Printable Paper Sheet -->
+  <div class="sheet">
+    <div class="header-block">
+      <div class="inst-title">{{ institution_name }}</div>
+      <div class="report-title">
+        {% if report_type == 'monthly' %}Monthly Attendance Summary
+        {% elif report_type == 'department' %}{{ dept_label }} Attendance &amp; Absenteeism Comparison
+        {% else %}{{ emp_label_plural }} Attendance Percentage &amp; Defaulter Audit
+        {% endif %}
+      </div>
+      <div class="meta-grid">
+        <div><strong>Academic Year:</strong> {{ academic_year }}</div>
+        <div><strong>Minimum Policy Threshold:</strong> {{ threshold }}%</div>
+        <div><strong>Generated On:</strong> {{ generated_at }}</div>
+      </div>
+    </div>
+
+    <!-- Table Data -->
+    {% if report_type == 'monthly' %}
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th class="text-center">Present</th>
+            <th class="text-center">Absent</th>
+            <th class="text-center">Leave</th>
+            <th class="text-center">Holidays</th>
+            <th class="text-center">Working Days</th>
+            <th class="text-center">Recorded Days</th>
+            <th class="text-center">Attendance %</th>
+            <th class="text-center">Absenteeism %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in monthly_rows %}
+          <tr>
+            <td class="font-bold">{{ r.month }}</td>
+            <td class="text-center">{{ r.present_count }}</td>
+            <td class="text-center">{{ r.absent_count }}</td>
+            <td class="text-center">{{ r.leave_count }}</td>
+            <td class="text-center">{{ r.holiday_count }}</td>
+            <td class="text-center font-bold">{{ r.total_working_days }}</td>
+            <td class="text-center">{{ r.total_recorded_days }}</td>
+            <td class="text-center font-bold">{{ r.attendance_percentage }}%</td>
+            <td class="text-center">{{ r.absenteeism_rate }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    {% elif report_type == 'department' %}
+      <table>
+        <thead>
+          <tr>
+            <th>{{ dept_label }}</th>
+            <th class="text-center">Total Staff</th>
+            <th class="text-center">Present</th>
+            <th class="text-center">Absent</th>
+            <th class="text-center">Leave</th>
+            <th class="text-center">Holidays</th>
+            <th class="text-center">Working Days</th>
+            <th class="text-center">Attendance %</th>
+            <th class="text-center">Absenteeism %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in department_rows %}
+          <tr>
+            <td class="font-bold">{{ r.department }}</td>
+            <td class="text-center">{{ r.total_employees }}</td>
+            <td class="text-center">{{ r.present_count }}</td>
+            <td class="text-center">{{ r.absent_count }}</td>
+            <td class="text-center">{{ r.leave_count }}</td>
+            <td class="text-center">{{ r.holiday_count }}</td>
+            <td class="text-center font-bold">{{ r.total_working_days }}</td>
+            <td class="text-center font-bold">{{ r.attendance_percentage }}%</td>
+            <td class="text-center font-bold {% if r.absenteeism_rate > 15.0 %}badge-defaulter{% endif %}">{{ r.absenteeism_rate }}%</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    {% else %}
+      <table>
+        <thead>
+          <tr>
+            <th>{{ id_code_label }}</th>
+            <th>Name</th>
+            <th>{{ dept_label }}</th>
+            <th class="text-center">Working Days</th>
+            <th class="text-center">Present</th>
+            <th class="text-center">Absent</th>
+            <th class="text-center">Leave</th>
+            <th class="text-center">Holidays</th>
+            <th class="text-center">Attendance %</th>
+            <th class="text-center">Compliance Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in employee_rows %}
+          <tr>
+            <td class="mono font-bold">{{ r.employee_code or '—' }}</td>
+            <td class="font-bold">{{ r.employee_name or 'Name not provided' }}</td>
+            <td>{{ r.department or 'Unassigned' }}</td>
+            <td class="text-center font-bold">{{ r.total_working_days }}</td>
+            <td class="text-center">{{ r.present_count }}</td>
+            <td class="text-center">{{ r.absent_count }}</td>
+            <td class="text-center">{{ r.leave_count }}</td>
+            <td class="text-center">{{ r.holiday_count }}</td>
+            <td class="text-center font-bold {% if r.below_threshold %}badge-defaulter{% else %}badge-pass{% endif %}">
+              {{ r.attendance_percentage }}%
+            </td>
+            <td class="text-center {% if r.below_threshold %}badge-defaulter{% else %}badge-pass{% endif %}">
+              {{ r.status_compliance }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <div class="footer-block">
+      <div>This is an official computer-generated institutional attendance audit document.</div>
+      <div>Page 1 of 1</div>
+    </div>
+  </div>
+
+</body>
+</html>

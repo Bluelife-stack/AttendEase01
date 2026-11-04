@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Matplotlib Visual Analytics — {{ app_name }}{% endblock %}
+{% block page_title %}Matplotlib Visual Analytics & Charts{% endblock %}
+
+{% block content %}
+<div class="charts-page space-y-6">
+
+  <!-- Header with Regenerate Action -->
+  <div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Matplotlib Visual Analytics Engine</h2>
+        <p class="text-sm text-secondary" style="margin-top: 0.25rem;">
+          Server-side rendered PNG visualizations generated via Matplotlib (Agg backend) from live Pandas & NumPy datasets.
+        </p>
+      </div>
+      <form method="post" action="{{ url_for('reports.generate_charts_action') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+          Regenerate All Charts
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {% if charts_exist %}
+    <!-- Chart 1: Monthly Attendance Summary -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">1. Monthly Attendance Summary Chart</h2>
+          <span class="text-sm text-secondary">Grouped bar comparison of Present, Absent, Leave, and Company Holidays</span>
+        </div>
+        <span class="code-badge">monthly_attendance_summary.png</span>
+      </div>
+      <div style="padding: 1.5rem; text-align: center; background: #FAFBFB;">
+        <img src="{{ url_for('static', filename='charts/monthly_attendance_summary.png') }}?t={{ range(1, 100000)|random }}"
+             alt="Monthly Attendance Status Summary"
+             style="max-width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin: 0 auto; box-shadow: var(--shadow-sm);" />
+      </div>
+      <div class="card-footer">
+        <strong>Academic Interpretation:</strong> Evaluates distribution across working days vs company holidays, providing management with seasonal variance in attendance and leave behavior.
+      </div>
+    </div>
+
+    <!-- Chart 2: Department-wise Absenteeism Comparison -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">2. Department-wise Absenteeism Rate Comparison</h2>
+          <span class="text-sm text-secondary">Bar chart evaluating absenteeism percentage across corporate departments</span>
+        </div>
+        <span class="code-badge">department_absenteeism_comparison.png</span>
+      </div>
+      <div style="padding: 1.5rem; text-align: center; background: #FAFBFB;">
+        <img src="{{ url_for('static', filename='charts/department_absenteeism_comparison.png') }}?t={{ range(1, 100000)|random }}"
+             alt="Department Absenteeism Comparison"
+             style="max-width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin: 0 auto; box-shadow: var(--shadow-sm);" />
+      </div>
+      <div class="card-footer">
+        <strong>Academic Interpretation:</strong> Highlights departments exceeding the 10% absenteeism tolerance line. Assists HR in workload balancing and detecting department-specific absentee patterns.
+      </div>
+    </div>
+
+    <!-- Chart 3: Employee-wise Attendance Percentage -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-header">
+        <div>
+          <h2 class="card-title">3. Employee-wise Attendance Percentage vs 75% Benchmark</h2>
+          <span class="text-sm text-secondary">Horizontal bar evaluation identifying policy compliance and chronic defaulters</span>
+        </div>
+        <span class="code-badge">employee_attendance_percentage.png</span>
+      </div>
+      <div style="padding: 1.5rem; text-align: center; background: #FAFBFB;">
+        <img src="{{ url_for('static', filename='charts/employee_attendance_percentage.png') }}?t={{ range(1, 100000)|random }}"
+             alt="Employee Attendance Percentage"
+             style="max-width: 100%; height: auto; border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin: 0 auto; box-shadow: var(--shadow-sm);" />
+      </div>
+      <div class="card-footer">
+        <strong>Academic Interpretation:</strong> Color-coded compliance chart (Green $\ge 75\%$, Red $< 75\%$) showing each employee's position relative to the institutional attendance threshold.
+      </div>
+    </div>
+
+  {% else %}
+    <div class="empty-state empty-state--page">
+      <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+      </svg>
+      <p>Charts have not been generated yet. Click below to render them with Matplotlib.</p>
+      <form method="post" action="{{ url_for('reports.generate_charts_action') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-primary btn-sm">Generate All 3 Charts Now</button>
+      </form>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

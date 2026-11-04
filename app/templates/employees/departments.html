@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Departments — {{ institution_name }}{% endblock %}
+{% block page_title %}Department Management{% endblock %}
+{% block content %}
+<div class="form-page" style="max-width:1000px;margin:0 auto;">
+  <div class="card form-card">
+    <div class="card-header"><h2 class="card-title">Add a department</h2></div>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label" for="name">Department name *</label><input class="form-input" id="name" name="name" maxlength="80" required placeholder="e.g. Computer Science and Engineering"></div>
+        <div class="form-group"><label class="form-label" for="code">Department code *</label><input class="form-input" id="code" name="code" maxlength="20" required placeholder="e.g. CSE"></div>
+        <div class="form-group" style="grid-column:1/-1"><label class="form-label" for="description">Description (optional)</label><input class="form-input" id="description" name="description" maxlength="255" placeholder="Department description"></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">Add Department</button><a class="btn btn-ghost" href="{{ url_for('employees.list_employees') }}">Back to Faculty</a></div>
+    </form>
+  </div>
+  <div class="card card--table" style="margin-top:1.25rem">
+    <div class="table-responsive"><table class="table"><thead><tr><th>Code</th><th>Department</th><th>Description</th><th>Status</th><th>Action</th></tr></thead><tbody>
+    {% for dept in departments %}<tr><td><span class="code-badge">{{ dept.code }}</span></td><td>{{ dept.name }}</td><td>{{ dept.description or '—' }}</td><td>{{ 'Active' if dept.is_active else 'Inactive' }}</td><td><form method="post" action="{{ url_for('employees.toggle_department', department_id=dept.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-secondary btn-sm" type="submit">{{ 'Deactivate' if dept.is_active else 'Reactivate' }}</button></form></td></tr>
+    {% else %}<tr><td colspan="5">No departments created yet. Add departments before adding faculty.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+</div>
+{% endblock %}

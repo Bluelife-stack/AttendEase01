@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/attendease-modern.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/attendease-pro.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body class="app-shell">
+<div class="app-topbar">
+  <a class="app-brand" href="{{ url_for('main.dashboard') }}"><span class="brand-symbol">A</span><span>AttendEase<small>PRO</small></span></a>
+  <nav class="app-dock" aria-label="Primary navigation">
+    <a class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}" title="Dashboard"><span>▦</span><small>Overview</small></a>
+    <a class="{% if request.endpoint == 'employees.departments' %}active{% endif %}" href="{{ url_for('employees.departments') }}" title="Departments"><span>⌘</span><small>Departments</small></a>
+    <a class="{% if request.endpoint and 'employees' in request.endpoint and request.endpoint not in ['employees.departments', 'employees.toggle_department'] %}active{% endif %}" href="{{ url_for('employees.list_employees') }}" title="Faculty & Staff"><span>♙</span><small>Faculty</small></a>
+    <a class="{% if request.endpoint == 'attendance.mark_attendance' %}active{% endif %}" href="{{ url_for('attendance.mark_attendance') }}" title="Record Attendance"><span>✓</span><small>Attendance</small></a>
+    <a class="{% if request.endpoint == 'attendance.history' %}active{% endif %}" href="{{ url_for('attendance.history') }}" title="Attendance Logs"><span>◷</span><small>Logs</small></a>
+    <a class="{% if request.endpoint and 'reports' in request.endpoint %}active{% endif %}" href="{{ url_for('reports.index') }}" title="Reports & Analytics"><span>⌁</span><small>Analytics</small></a>
+    <a class="{% if request.endpoint and 'settings' in request.endpoint %}active{% endif %}" href="{{ url_for('settings.index') }}" title="Settings"><span>⚙</span><small>Settings</small></a>
+  </nav>
+  <div class="app-top-actions"><span class="benchmark-chip">Benchmark <b>{{ threshold }}%</b></span><a class="support-chip" href="{% if support_email %}mailto:{{ support_email }}?subject=AttendEase%20Support{% else %}{{ url_for('main.help_desk') }}{% endif %}" title="Help Desk">? <span>Help Desk</span></a>
+    {% if current_user.is_authenticated %}<span class="user-chip"><i>{{ current_user.full_name[:1].upper() }}</i><span>{{ current_user.full_name }}<small>{{ current_user.role }}</small></span></span><a class="signout-link" href="{{ url_for('auth.logout') }}">Sign out</a>{% else %}<a class="signout-link" href="{{ url_for('auth.login') }}">Sign in</a>{% endif %}
+  </div>
+</div>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ─── Sidebar ────────────────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+      </svg>
+    </div>
+    <div style="min-width: 0;">
+      <div class="brand-name">AttendEase</div>
+      <div style="font-size: 0.6875rem; color: #9AA4B2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ institution_name }}">{{ institution_name }}</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Executive Overview</div>
+    <a href="{{ url_for('main.dashboard') }}" class="nav-item {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+      Dashboard
+    </a>
+
+    <div class="nav-section-label">Personnel Roster</div>
+    <a href="{{ url_for('employees.departments') }}" class="nav-item {% if request.endpoint == 'employees.departments' %}active{% endif %}">
+      <span class="nav-icon">▦</span> Departments
+    </a>
+
+    <a href="{{ url_for('employees.list_employees') }}" class="nav-item {% if request.endpoint and 'employees' in request.endpoint and request.endpoint not in ['employees.departments', 'employees.toggle_department'] %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      {{ emp_label_plural }}
+    </a>
+
+    <div class="nav-section-label">Operations</div>
+    <a href="{{ url_for('attendance.mark_attendance') }}" class="nav-item {% if request.endpoint == 'attendance.mark_attendance' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      Record Attendance
+    </a>
+    <a href="{{ url_for('attendance.history') }}" class="nav-item {% if request.endpoint == 'attendance.history' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Attendance Logs
+    </a>
+
+    <div class="nav-section-label">Data Analytics</div>
+    <a href="{{ url_for('reports.index') }}" class="nav-item {% if request.endpoint and request.endpoint == 'reports.index' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Reports &amp; Summaries
+    </a>
+    <a href="{{ url_for('reports.view_charts') }}" class="nav-item {% if request.endpoint and request.endpoint == 'reports.view_charts' %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+      </svg>
+      Visual Charts (Matplotlib)
+    </a>
+
+    <div class="nav-section-label">System &amp; Policy</div>
+    <a href="{{ url_for('settings.index') }}" class="nav-item {% if request.endpoint and 'settings' in request.endpoint %}active{% endif %}">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      Institution Settings
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div style="font-weight: 600; color: #CDD5DF;">{{ institution_type }}</div>
+    <div style="font-size: 0.6875rem; color: #64748B;">Academic Year {{ academic_year }}</div>
+  </div>
+</aside>
+
+<!-- ─── Main Area ─────────────────────────────────────────────── -->
+<div class="main-area">
+
+  <!-- Top Header -->
+  <header class="top-header">
+    <div class="header-left">
+      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+    </div>
+    <div class="header-right" style="display: flex; align-items: center; gap: 0.75rem;">
+      <span class="badge badge--active" title="Configured institutional attendance benchmark">Benchmark: {{ threshold }}%</span>
+
+      <a href="{{ url_for('attendance.mark_attendance') }}" class="btn btn-primary btn-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14m-7-7h14"/></svg>
+        Record Attendance
+      </a>
+
+      <!-- User Authentication Controls -->
+      <div style="border-left: 1px solid #E2E6E8; padding-left: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+        {% if current_user.is_authenticated %}
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #187C78; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8125rem;">
+              {{ current_user.full_name[:1].upper() }}
+            </div>
+            <div style="line-height: 1.2;">
+              <div style="font-size: 0.8125rem; font-weight: 600; color: #101B2B;">{{ current_user.full_name }}</div>
+              <div style="font-size: 0.6875rem; color: #697586;">{{ current_user.role }}</div>
+            </div>
+          </div>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" title="Sign out of portal" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sign Out
+          </a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+            Sign In
+          </a>
+          <a href="{{ url_for('auth.register') }}" class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; background: #E6F3F2; color: #187C78; border-color: #A3D4D1;">
+            Register
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container" id="flashContainer">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="alert">
+            <span class="flash-msg">{{ message }}</span>
+            <button class="flash-close" onclick="this.parentElement.remove()" aria-label="Dismiss">&times;</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Page content -->
+  <main class="page-content">
+    {% block content %}{% endblock %}
+  </main>
+
+</div><!-- /main-area -->
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

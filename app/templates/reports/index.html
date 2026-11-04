@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+{% block title %}Reports &amp; Analytics — {{ institution_name }}{% endblock %}
+{% block page_title %}Attendance Reports &amp; Data Analytics{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+
+  <!-- Policy & Formula Reference Card -->
+  <div class="card" style="margin-bottom: 1.5rem; background: #FAFBFB;">
+    <div style="padding: 1rem 1.25rem; font-size: 0.8125rem; color: #475569;">
+      <strong>Data Analysis Methodology:</strong>
+      <ul style="margin-top: 0.35rem; margin-left: 1.25rem; line-height: 1.6;">
+        <li><strong>Working Days:</strong> Defined as <code class="code-badge">Present + Absent + Leave</code>. Officially declared <code class="code-badge">Holiday</code> is excluded from the working days denominator.</li>
+        <li><strong>Attendance Percentage:</strong> <code class="code-badge">(Present Days / Working Days) × 100</code> computed via NumPy.</li>
+        <li><strong>Absenteeism Rate:</strong> <code class="code-badge">(Absent Days / Working Days) × 100</code>.</li>
+        <li><strong>Benchmark Threshold:</strong> Staff below <code class="code-badge">{{ threshold }}%</code> are flagged for administrative follow-up.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Filter & Tab Toolbar -->
+  <div class="card" style="margin-bottom: 1.5rem; overflow: visible !important; position: relative;">
+    <form class="report-filters" method="get" action="{{ url_for('reports.index') }}" style="overflow: visible !important;">
+      <div class="form-grid form-grid--4">
+        <div class="form-group">
+          <label class="form-label">Report View</label>
+          <select name="type" class="form-select" onchange="this.form.submit()">
+            <option value="employee" {% if report_type == 'employee' %}selected{% endif %}>{{ emp_label_singular }} Attendance Percentage</option>
+            <option value="monthly" {% if report_type == 'monthly' %}selected{% endif %}>Monthly Attendance Report</option>
+            <option value="department" {% if report_type == 'department' %}selected{% endif %}>{{ dept_label }} Summary</option>
+          </select>
+        </div>
+
+        {% if report_type == 'employee' %}
+        <div class="form-group">
+          <label class="form-label">{{ dept_label }}</label>
+          <select name="department" class="form-select">
+            <option value="">All {{ dept_label }}s</option>
+            {% for d in departments %}
+              <option value="{{ d }}" {% if dept == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">From Date</label>
+          <input type="date" name="date_from" value="{{ date_from }}" class="form-input" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">To Date</label>
+          <input type="date" name="date_to" value="{{ date_to }}" class="form-input" />
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-actions" style="margin-top: 1rem; border: none; padding-top: 0; overflow: visible !important; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="submit" class="btn btn-secondary btn-sm">Filter Report</button>
+          {% if dept or date_from or date_to or report_type != 'employee' %}
+            <a href="{{ url_for('reports.index') }}" class="btn btn-ghost btn-sm">Reset</a>
+          {% endif %}
+        </div>
+
+        <!-- Professional Multi-Format Export Action Toolbar -->
+        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; position: relative; z-index: 100;">
+          <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.04em; margin-right: 0.25rem;">Export Report:</span>
+
+          <!-- Direct Excel (.xlsx) -->
+          <a href="{{ url_for('reports.export_excel', type=report_type, department=dept, date_from=date_from, date_to=date_to) }}" 
+             class="btn btn-sm" 
+             style="background: #0F766E; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-radius: 6px; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.06);"
+             title="Download styled Microsoft Excel (.xlsx) spreadsheet">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Excel (.xlsx)</span>
+          </a>
+
+          <!-- Direct Executive PDF -->
+          <a href="{{ url_for('reports.export_pdf', type=report_type, department=dept, date_from=date_from, date_to=date_to) }}" 
+             class="btn btn-sm" 
+             style="background: #B93A45; color: #FFFFFF; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-radius: 6px; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,0.06);"
+             title="Download official PDF audit report">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>PDF</span>
+          </a>
+
+          <!-- Direct CSV Data -->
+          <a href="{{ url_for('reports.export_csv', type=report_type, department=dept, date_from=date_from, date_to=date_to) }}" 
+             class="btn btn-secondary btn-sm" 
+             style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-radius: 6px; text-decoration: none;"
+             title="Download standard comma-separated file">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>CSV</span>
+          </a>
+
+          <!-- Direct Print View -->
+          <a href="{{ url_for('reports.print_report', type=report_type, department=dept, date_from=date_from, date_to=date_to) }}" 
+             target="_blank"
+             class="btn btn-ghost btn-sm" 
+             style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-radius: 6px; text-decoration: none; border: 1px solid #CBD5E1;"
+             title="Open clean print preview with institutional letterhead">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <span>Print View</span>
+          </a>
+
+          <!-- JSON Export Option -->
+          <a href="{{ url_for('reports.export_json', type=report_type, department=dept, date_from=date_from, date_to=date_to) }}" 
+             class="btn btn-ghost btn-sm" 
+             style="font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.65rem; border-radius: 6px; text-decoration: none; color: #64748B;"
+             title="Download structured JSON file">
+            <span>JSON</span>
+          </a>
+
+          <a href="{{ url_for('reports.view_charts') }}" class="btn btn-secondary btn-sm" style="margin-left: 0.25rem;">
+            Visual Charts &rarr;
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ================= TAB 1: EMPLOYEE ATTENDANCE PERCENTAGE ================= -->
+  {% if report_type == 'employee' %}
+    {% if employee_rows %}
+      <div class="card card--table">
+        <div class="card-header">
+          <h2 class="card-title">{{ emp_label_plural }} Attendance Percentage &amp; Absenteeism Rates</h2>
+          <span class="text-sm text-secondary">Minimum Benchmark Threshold: <strong>{{ threshold }}%</strong></span>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ id_code_label }}</th>
+                <th>Name</th>
+                <th>{{ dept_label }}</th>
+                <th>Working Days</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Leave</th>
+                <th>Holidays</th>
+                <th>Attendance %</th>
+                <th>Absenteeism %</th>
+                <th>Policy Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in employee_rows %}
+              <tr class="{% if r.below_threshold %}row--alert{% endif %}">
+                <td><span class="code-badge">{{ r.employee_code or '—' }}</span></td>
+                <td>
+                  <a href="{{ url_for('employees.view_employee', employee_id=r.employee_id) }}" class="link-body fw-medium">{{ r.employee_name or 'Name not provided' }}</a>
+                </td>
+                <td>{{ r.department or 'Unassigned' }}</td>
+                <td><strong>{{ r.total_working_days }}</strong></td>
+                <td><span class="badge badge--present">{{ r.present_count }}</span></td>
+                <td><span class="badge badge--absent">{{ r.absent_count }}</span></td>
+                <td><span class="badge badge--late">{{ r.leave_count }}</span></td>
+                <td><span class="badge badge--neutral">{{ r.holiday_count }}</span></td>
+                <td>
+                  <span class="pct-chip {% if r.below_threshold %}pct-chip--low{% endif %}">
+                    {{ r.attendance_percentage }}%
+                  </span>
+                </td>
+                <td><span class="text-secondary text-sm">{{ r.absenteeism_rate }}%</span></td>
+                <td>
+                  {% if r.total_working_days == 0 %}
+                    <span class="badge badge--neutral">No Working Days</span>
+                  {% elif r.below_threshold %}
+                    <span class="badge badge--absent">Defaulter (&lt;{{ threshold }}%)</span>
+                  {% else %}
+                    <span class="badge badge--active">Meets Benchmark</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="table-footer">{{ employee_rows|length }} {{ emp_label_plural|lower }} evaluated via Pandas &amp; NumPy</div>
+      </div>
+    {% else %}
+      <div class="empty-state empty-state--page">
+        <p>No records found matching criteria.</p>
+      </div>
+    {% endif %}
+
+  <!-- ================= TAB 2: MONTHLY ATTENDANCE REPORT ================= -->
+  {% elif report_type == 'monthly' %}
+    {% if monthly_rows %}
+      <div class="card card--table">
+        <div class="card-header">
+          <h2 class="card-title">Monthly Attendance Summary (Pandas Grouped by Year-Month)</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Working Days Logged</th>
+                <th>Present Logs</th>
+                <th>Absent Logs</th>
+                <th>Leave Logs</th>
+                <th>Institutional Holidays</th>
+                <th>Total Recorded Days</th>
+                <th>Monthly Attendance %</th>
+                <th>Absenteeism Rate %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in monthly_rows %}
+              <tr>
+                <td><strong>{{ m.month }}</strong></td>
+                <td><strong>{{ m.total_working_days }}</strong></td>
+                <td><span class="badge badge--present">{{ m.present_count }}</span></td>
+                <td><span class="badge badge--absent">{{ m.absent_count }}</span></td>
+                <td><span class="badge badge--late">{{ m.leave_count }}</span></td>
+                <td><span class="badge badge--neutral">{{ m.holiday_count }}</span></td>
+                <td>{{ m.total_recorded_days }}</td>
+                <td><span class="pct-chip">{{ m.attendance_percentage }}%</span></td>
+                <td><span class="text-secondary text-sm">{{ m.absenteeism_rate }}%</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state empty-state--page">
+        <p>No monthly attendance records available yet.</p>
+      </div>
+    {% endif %}
+
+  <!-- ================= TAB 3: DEPARTMENT SUMMARY ================= -->
+  {% elif report_type == 'department' %}
+    {% if department_rows %}
+      <div class="card card--table">
+        <div class="card-header">
+          <h2 class="card-title">{{ dept_label }} Attendance &amp; Absenteeism Comparison (Pandas GroupBy)</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ dept_label }}</th>
+                <th>Total Personnel</th>
+                <th>Working Days Logged</th>
+                <th>Present</th>
+                <th>Absent</th>
+                <th>Leave</th>
+                <th>Holidays</th>
+                <th>Attendance %</th>
+                <th>Absenteeism Rate %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in department_rows %}
+              <tr>
+                <td><strong>{{ d.department }}</strong></td>
+                <td>{{ d.total_employees }}</td>
+                <td><strong>{{ d.total_working_days }}</strong></td>
+                <td><span class="badge badge--present">{{ d.present_count }}</span></td>
+                <td><span class="badge badge--absent">{{ d.absent_count }}</span></td>
+                <td><span class="badge badge--late">{{ d.leave_count }}</span></td>
+                <td><span class="badge badge--neutral">{{ d.holiday_count }}</span></td>
+                <td><span class="pct-chip">{{ d.attendance_percentage }}%</span></td>
+                <td>
+                  <span class="{% if d.absenteeism_rate > 15.0 %}text-danger font-bold{% else %}text-secondary{% endif %}">
+                    {{ d.absenteeism_rate }}%
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state empty-state--page">
+        <p>No {{ dept_label|lower }} records available yet.</p>
+      </div>
+    {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleExportMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('exportDropdownMenu');
+  if (menu) {
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('exportDropdownMenu');
+  const btn = document.getElementById('exportMenuBtn');
+  if (menu && btn && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+</script>
+{% endblock %}

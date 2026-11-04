@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found{% endblock %}
+{% block page_title %}Error 404{% endblock %}
+
+{% block content %}
+<div class="empty-state empty-state--page">
+  <svg class="empty-icon text-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+  </svg>
+  <h2>Resource Not Found</h2>
+  <p>The student, subject, session, or page you were looking for does not exist or has been removed.</p>
+  <div style="margin-top: 1rem;">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-sm">Return to Dashboard</a>
+  </div>
+</div>
+{% endblock %}

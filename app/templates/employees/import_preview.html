@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Review Import — {{ institution_name }}{% endblock %}
+{% block page_title %}Review Faculty Import{% endblock %}
+{% block content %}
+<div class="card card--table import-review">
+  <div class="import-review-intro">
+    <h2 class="card-title">{{ filename }}</h2>
+    <p class="text-secondary text-sm">
+      Detected {{ rows|length }} faculty records: {{ ready_count }} ready and {{ error_count }} with data-integrity errors.
+      {{ warning_count }} record(s) have non-blocking missing-information warnings.
+      Missing details can be edited later from the faculty directory.
+    </p>
+    {% if skipped_empty_rows %}
+    <p class="text-secondary text-sm">
+      {{ skipped_empty_rows|length }} entirely empty row{% if skipped_empty_rows|length != 1 %}s{% endif %}
+      skipped (source row{% if skipped_empty_rows|length != 1 %}s{% endif %}
+      {{ skipped_empty_rows|join(', ') }}).
+    </p>
+    {% endif %}
+    {% if not departments %}
+    <p class="text-secondary text-sm">
+      No departments are in your directory yet. Faculty can still be imported without a department;
+      add departments separately and assign them later if needed.
+    </p>
+    {% endif %}
+    <div class="import-review-mappings" aria-label="Detected column mappings">
+      {% for field, detection in detected_columns.items() %}
+      <span class="badge {% if detection.confidence == 'review' %}badge--inactive{% else %}badge--active{% endif %}">
+        {{ field.replace('_', ' ')|title }} from {{ detection.column }}{% if detection.confidence == 'review' %} (check match){% endif %}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  <datalist id="import-departments">
+    {% for department in departments %}
+    <option value="{{ department.name }}">{{ department.code }}</option>
+    <option value="{{ department.code }}">{{ department.name }}</option>
+    {% endfor %}
+  </datalist>
+  {% if rows %}
+  <form method="post" action="{{ url_for('employees.confirm_employee_import') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="table-responsive"><table class="table import-review-table"><thead><tr>
+      <th>Source row</th><th>Faculty ID</th><th>Faculty name</th><th>Department</th>
+      <th>Email</th><th>Designation</th><th>Phone</th><th>Review notes</th>
+    </tr></thead><tbody>
+    {% for row in rows %}
+    {% set row_index = loop.index0 %}
+    <tr>
+      <td>{{ row.row }}</td>
+      <td><input class="form-input" style="min-width:130px" name="employee_code_{{ row_index }}" value="{{ row.employee_code or '' }}" maxlength="20" aria-label="Faculty ID for source row {{ row.row }}"></td>
+      <td><input class="form-input" style="min-width:190px" name="employee_name_{{ row_index }}" value="{{ row.employee_name or '' }}" maxlength="120" aria-label="Faculty name for source row {{ row.row }}"></td>
+      <td>
+        <input class="form-input" style="min-width:190px" name="department_{{ row_index }}" value="{{ row.department or '' }}" list="import-departments" maxlength="80" aria-label="Department for source row {{ row.row }}">
+        {% if row.department_match %}<small class="text-secondary">{{ row.department_match }}</small>{% endif %}
+      </td>
+      <td><input class="form-input" style="min-width:190px" type="email" name="email_{{ row_index }}" value="{{ row.email or '' }}" maxlength="120" aria-label="Email for source row {{ row.row }}"></td>
+      <td><input class="form-input" style="min-width:150px" name="designation_{{ row_index }}" value="{{ row.designation or '' }}" maxlength="80" aria-label="Designation for source row {{ row.row }}"></td>
+      <td><input class="form-input" style="min-width:140px" name="phone_{{ row_index }}" value="{{ row.phone or '' }}" maxlength="30" aria-label="Phone for source row {{ row.row }}"></td>
+      <td style="min-width:250px">
+        {% if row.errors %}
+          <ul style="padding-left:1rem;margin-bottom:.5rem">{% for error in row.errors %}<li><span class="text-danger text-sm">{{ error }}</span></li>{% endfor %}</ul>
+        {% endif %}
+        {% if row.warnings %}
+          <ul style="padding-left:1rem;margin-bottom:.5rem">{% for warning in row.warnings %}<li><span class="text-secondary text-sm">{{ warning }}</span></li>{% endfor %}</ul>
+        {% endif %}
+        {% if row.existing_employee %}
+        <label style="display:block;margin-top:.5rem">
+          <input type="checkbox" name="update_existing_{{ row_index }}" value="1" {% if row.update_existing_approved %}checked{% endif %}>
+          Approve updating existing profile
+        </label>
+        <small class="text-secondary">Attendance history is preserved.</small>
+        {% endif %}
+        {% if not row.errors and not row.warnings and not row.existing_employee %}
+          <span class="badge badge--active">Ready</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody></table></div>
+    <div class="import-review-footer">
+      <p class="text-sm text-secondary">
+        Missing details are saved as blank and can be added later. Existing departments are matched automatically;
+        an unmatched department is left unassigned. Duplicate IDs require review, and updating an existing profile
+        requires explicit approval. Attendance history is preserved.
+      </p>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn btn-primary" type="submit">Import available faculty information</button>
+        <a class="btn btn-ghost" href="{{ url_for('employees.import_employees') }}">Cancel / Upload another file</a>
+      </div>
+    </div>
+  </form>
+  {% else %}
+  <div class="empty-state">
+    <p>No faculty records contain importable information. The empty rows were skipped; upload another file.</p>
+    <a class="btn btn-primary" href="{{ url_for('employees.import_employees') }}">Upload another file</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

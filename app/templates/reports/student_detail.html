@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Report: {{ student.full_name }}{% endblock %}
+{% block page_title %}Student Attendance Report{% endblock %}
+
+{% block content %}
+<div class="detail-page">
+  <div class="detail-header">
+    <div>
+      <div class="detail-meta">
+        <span class="code-badge code-badge--lg">{{ student.roll_number }}</span>
+        <span class="badge badge--neutral">{{ student.class_section }}</span>
+      </div>
+      <h1 class="detail-title">{{ student.full_name }}</h1>
+      {% if student.email %}
+        <p class="detail-subtitle">{{ student.email }}</p>
+      {% endif %}
+    </div>
+    <div class="detail-actions">
+      <a href="{{ url_for('reports.index') }}" class="btn btn-ghost btn-sm">&larr; Back to Reports</a>
+    </div>
+  </div>
+
+  <div class="stats-grid stats-grid--compact" style="margin-bottom: 1.5rem;">
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value">{{ total_sessions }}</div>
+        <div class="stat-label">Total Conducted</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value text-success">{{ total_present }}</div>
+        <div class="stat-label">Attended</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value {% if overall_pct is not none and overall_pct < threshold %}text-danger{% else %}text-success{% endif %}">
+          {% if overall_pct is not none %}{{ overall_pct }}%{% else %}N/A{% endif %}
+        </div>
+        <div class="stat-label">Cumulative Attendance</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value">
+          {% if overall_pct is none %}
+            <span class="badge badge--neutral">No Data</span>
+          {% elif overall_pct < threshold %}
+            <span class="badge badge--absent">Defaulter (&lt;{{ threshold }}%)</span>
+          {% else %}
+            <span class="badge badge--active">Eligible</span>
+          {% endif %}
+        </div>
+        <div class="stat-label">Eligibility Status</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--table">
+    <div class="card-header">
+      <h2 class="card-title">Subject-wise Breakdown</h2>
+    </div>
+    {% if detail %}
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Subject Code</th>
+              <th>Subject Name</th>
+              <th>Total Sessions</th>
+              <th>Present</th>
+              <th>Late</th>
+              <th>Absent</th>
+              <th>Excused</th>
+              <th>Attendance %</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in detail %}
+            <tr>
+              <td><span class="code-badge">{{ row.subject_code }}</span></td>
+              <td>{{ row.subject_name }}</td>
+              <td>{{ row.total }}</td>
+              <td><span class="badge badge--present">{{ row.present }}</span></td>
+              <td><span class="badge badge--late">{{ row.late }}</span></td>
+              <td><span class="badge badge--absent">{{ row.absent }}</span></td>
+              <td><span class="badge badge--neutral">{{ row.excused }}</span></td>
+              <td>
+                {% if row.percentage is not none %}
+                  <span class="pct-chip {% if row.percentage < threshold %}pct-chip--low{% endif %}">
+                    {{ row.percentage }}%
+                  </span>
+                {% else %}
+                  <span class="text-muted">N/A</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if row.percentage is none %}
+                  <span class="text-muted">—</span>
+                {% elif row.percentage < threshold %}
+                  <span class="badge badge--absent">Low</span>
+                {% else %}
+                  <span class="badge badge--active">Normal</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>No records for this student in the selected period.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

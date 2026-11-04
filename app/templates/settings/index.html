@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Institutional Configuration — {{ institution_name }}{% endblock %}
+{% block page_title %}Institutional &amp; Terminology Configuration{% endblock %}
+
+{% block content %}
+<div class="form-page" style="max-width: 900px; margin: 0 auto;">
+
+  <!-- Quick Presets Card -->
+  <div class="card" style="margin-bottom: 1.5rem; background: #FAFBFD; border: 1px solid #DFE5EC;">
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h3 style="font-size: 0.9375rem; font-weight: 600; color: #101B2B; margin-bottom: 0.25rem;">
+          Institutional Presets
+        </h3>
+        <p style="font-size: 0.8125rem; color: #697586; margin: 0;">
+          Quickly adapt the entire system's terminology and labels for your organization type.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="applyPreset('university')">
+          University / College
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="applyPreset('school')">
+          School / K-12
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="applyPreset('corporate')">
+          Corporate Enterprise
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="applyPreset('research')">
+          Research Institute
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card form-card">
+    <div class="card-header" style="border-bottom: 1px solid #E2E6E8; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+      <div>
+        <h2 class="card-title" style="font-size: 1.15rem; font-weight: 700; color: #17263C;">
+          Customization &amp; Attendance Policy Settings
+        </h2>
+        <p style="font-size: 0.8125rem; color: #697586; margin-top: 0.25rem;">
+          These settings dynamically update all headings, navigation items, roster tables, reports, and charts throughout the application.
+        </p>
+      </div>
+    </div>
+
+    <form method="post" novalidate id="settingsForm">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <!-- Section 1: Institution Identity -->
+      <h3 style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #187C78; font-weight: 700; margin-bottom: 1rem;">
+        1. Organization Identity
+      </h3>
+
+      <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem;">
+        <div class="form-group">
+          <label for="institution_name" class="form-label">Institution / Organization Name <span class="required">*</span></label>
+          <input type="text" id="institution_name" name="institution_name"
+                 value="{{ settings.institution_name }}"
+                 class="form-input" placeholder="e.g. Mohan Babu University (MBU)" required />
+          <p class="form-hint">Displayed in branding headers, exported reports, and analytics charts.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="institution_type" class="form-label">Institution Category <span class="required">*</span></label>
+          <select id="institution_type" name="institution_type" class="form-select">
+            <option value="University / College" {% if settings.institution_type == 'University / College' %}selected{% endif %}>University / Higher Education College</option>
+            <option value="School / K-12" {% if settings.institution_type == 'School / K-12' %}selected{% endif %}>School / Academy</option>
+            <option value="Corporate Enterprise" {% if settings.institution_type == 'Corporate Enterprise' %}selected{% endif %}>Corporate Enterprise / Private Co.</option>
+            <option value="Research Institute" {% if settings.institution_type == 'Research Institute' %}selected{% endif %}>Research Institute / Laboratory</option>
+          </select>
+          <p class="form-hint">Governs administrative classification.</p>
+        </div>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="app_name" class="form-label">Application Title <span class="required">*</span></label>
+          <input type="text" id="app_name" name="app_name"
+                 value="{{ settings.app_name }}"
+                 class="form-input" placeholder="e.g. StaffPulse — Faculty & Employee Attendance System" required />
+          <p class="form-hint">Title displayed in browser tabs and application banners.</p>
+        </div>
+      </div>
+
+      <!-- Section 2: Terminology & Nomenclature Customization -->
+      <h3 style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #187C78; font-weight: 700; margin-bottom: 1rem; border-top: 1px solid #F0F4F8; padding-top: 1.5rem;">
+        2. Terminology &amp; Header Nomenclature
+      </h3>
+
+      <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem;">
+        <div class="form-group">
+          <label for="employee_label_singular" class="form-label">Personnel Term (Singular) <span class="required">*</span></label>
+          <input type="text" id="employee_label_singular" name="employee_label_singular"
+                 value="{{ settings.employee_label_singular }}"
+                 class="form-input" placeholder="e.g. Faculty Member, Employee, Teacher" required />
+          <p class="form-hint">Used in buttons like "Add New Faculty Member".</p>
+        </div>
+
+        <div class="form-group">
+          <label for="employee_label_plural" class="form-label">Personnel Term (Plural) <span class="required">*</span></label>
+          <input type="text" id="employee_label_plural" name="employee_label_plural"
+                 value="{{ settings.employee_label_plural }}"
+                 class="form-input" placeholder="e.g. Faculty & Staff, Employees, Teachers" required />
+          <p class="form-hint">Used in sidebar links, page titles, and directory rosters.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="department_label" class="form-label">Department / School Term <span class="required">*</span></label>
+          <input type="text" id="department_label" name="department_label"
+                 value="{{ settings.department_label }}"
+                 class="form-input" placeholder="e.g. Department / School, Division, Department" required />
+          <p class="form-hint">Column heading for organizational subdivisions.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="id_code_label" class="form-label">Identifier / ID Code Term <span class="required">*</span></label>
+          <input type="text" id="id_code_label" name="id_code_label"
+                 value="{{ settings.id_code_label }}"
+                 class="form-input" placeholder="e.g. Faculty ID, Employee Code, Staff ID" required />
+          <p class="form-hint">Column heading for alphanumeric staff identification.</p>
+        </div>
+      </div>
+
+      <!-- Section 3: Policy & Operational Year -->
+      <h3 style="font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: #187C78; font-weight: 700; margin-bottom: 1rem; border-top: 1px solid #F0F4F8; padding-top: 1.5rem;">
+        3. Operational Period &amp; Attendance Policy
+      </h3>
+
+      <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem;">
+        <div class="form-group">
+          <label for="academic_year" class="form-label">Academic / Fiscal Year <span class="required">*</span></label>
+          <input type="text" id="academic_year" name="academic_year"
+                 value="{{ settings.academic_year }}"
+                 class="form-input" placeholder="e.g. 2026-2027" required />
+        </div>
+
+        <div class="form-group">
+          <label for="attendance_threshold" class="form-label">Minimum Attendance Benchmark (%) <span class="required">*</span></label>
+          <input type="number" id="attendance_threshold" name="attendance_threshold"
+                 value="{{ settings.attendance_threshold }}"
+                 class="form-input" min="0" max="100" step="0.5" required />
+          <p class="form-hint">Staff below this threshold are flagged in reports &amp; the absenteeism chart.</p>
+        </div>
+      </div>
+
+      <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #E2E6E8; padding-top: 1.25rem;">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-weight: 600;">
+          Save Institutional Configuration
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function applyPreset(preset) {
+  const form = document.getElementById('settingsForm');
+  if (preset === 'university') {
+    document.getElementById('institution_name').value = 'Mohan Babu University (MBU)';
+    document.getElementById('institution_type').value = 'University / College';
+    document.getElementById('app_name').value = 'StaffPulse — Faculty & Employee Attendance System';
+    document.getElementById('employee_label_singular').value = 'Faculty Member';
+    document.getElementById('employee_label_plural').value = 'Faculty & Staff';
+    document.getElementById('department_label').value = 'School / Department';
+    document.getElementById('id_code_label').value = 'Faculty ID';
+    document.getElementById('academic_year').value = '2026-2027';
+    document.getElementById('attendance_threshold').value = '75.0';
+  } else if (preset === 'school') {
+    document.getElementById('institution_name').value = 'Delhi Public School (DPS)';
+    document.getElementById('institution_type').value = 'School / K-12';
+    document.getElementById('app_name').value = 'AttendEase — Teacher & Staff Attendance System';
+    document.getElementById('employee_label_singular').value = 'Teacher / Staff';
+    document.getElementById('employee_label_plural').value = 'Teachers & Staff';
+    document.getElementById('department_label').value = 'Academic Wing / Department';
+    document.getElementById('id_code_label').value = 'Teacher Code';
+    document.getElementById('academic_year').value = '2026-2027';
+    document.getElementById('attendance_threshold').value = '80.0';
+  } else if (preset === 'corporate') {
+    document.getElementById('institution_name').value = 'Nexora Technologies Inc.';
+    document.getElementById('institution_type').value = 'Corporate Enterprise';
+    document.getElementById('app_name').value = 'StaffPulse — Corporate Attendance Analytics';
+    document.getElementById('employee_label_singular').value = 'Employee';
+    document.getElementById('employee_label_plural').value = 'Employees';
+    document.getElementById('department_label').value = 'Business Unit / Department';
+    document.getElementById('id_code_label').value = 'Employee ID';
+    document.getElementById('academic_year').value = 'FY 2026-2027';
+    document.getElementById('attendance_threshold').value = '85.0';
+  } else if (preset === 'research') {
+    document.getElementById('institution_name').value = 'National Science & Technology Institute';
+    document.getElementById('institution_type').value = 'Research Institute';
+    document.getElementById('app_name').value = 'LabTrack — Scientist & Staff Attendance Portal';
+    document.getElementById('employee_label_singular').value = 'Scientist / Fellow';
+    document.getElementById('employee_label_plural').value = 'Scientists & Research Staff';
+    document.getElementById('department_label').value = 'Laboratory / Division';
+    document.getElementById('id_code_label').value = 'Scientist ID';
+    document.getElementById('academic_year').value = '2026-2027';
+    document.getElementById('attendance_threshold').value = '75.0';
+  }
+}
+</script>
+{% endblock %}
